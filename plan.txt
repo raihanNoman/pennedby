@@ -1,10 +1,18 @@
 Future plans: 
 
 -- allow users to determine number of opens  (1 - 10 - unlimited) number of views
-
-
 -- send shareable link: 
 basically imbed in email
+
+
+Useage: 
+Users write a personal letter / penned by them. They must have a styles or a ipad and pencil
+They upload it on their account and determine the rules
+
+They share this specific letter to someone via link
+- A love sending it to a loved one via Messages
+- A founder writing to their user base a hand written welcome Messages
+- A book write signing their ebooks live -- (subject to solana - make it NFT which could be sold : now people wanna sign it)
 
 
 How we make money: 
