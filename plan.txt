@@ -1,0 +1,34 @@
+Future plans: 
+
+-- allow users to determine number of opens  (1 - 10 - unlimited) number of views
+
+
+-- send shareable link: 
+basically imbed in email
+
+
+How we make money: 
+1. Solana transactions : signed, certified mails with programable rules - $15. 
+ --- Its like a very high end card for users but more then a card. much llike how duolingo does it. 
+
+2. Founders willl use it to digitally send it to diffferent people
+--- book authors can do virtual sessions --- live sessions in live book signing of thier ebook -- I can have that on solana and have it as na NFT
+
+
+Romantic mode: 
+-- Send it and it disappears
+
+Business mode: 
+-- send it and it says alive for 24 hours
+
+Philosophy mode: 
+-- send it and it remains?
+
+
+Monetization: 
+$1/month or $10/year
+
+
+Premium: 
+Solana Signed Wallet. 
+Secret Messages - certified mail type. 
