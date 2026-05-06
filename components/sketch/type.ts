@@ -13,7 +13,7 @@ export interface SketchRef {
   clearCanvas: () => void;
   getStrokeItems: () => StrokeItem[];
   getStrokes: () => Stroke[];
-  setDiatricsMode(enabled: boolean): void;
+  undo: () => void;
 }
 
 export interface SketchProps {

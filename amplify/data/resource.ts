@@ -4,8 +4,11 @@ const schema = a.schema({
   Post: a
     .model({
       isPublic: a.boolean().default(true),
-      points: a.string().array(), // svg points used to do the animation
-      pointStamps: a.string().array(), // svg timings for the points // copy from quranplay
+      points: a.json(), // svg points used to do the animation
+
+      color: a.string(),
+      size: a.integer(),
+      viewBox: a.string(),
 
       audioKey: a.string(), // adding voice
       audioDuration: a.float(), // Vital for the iframe to know the "scroll/play" length

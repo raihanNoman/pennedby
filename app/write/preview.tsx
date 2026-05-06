@@ -1,23 +1,21 @@
+import { useAppSelector } from "@/_redux/hooks";
+import Button from "@/components/Button";
+import Empty from "@/components/Empty";
 import Haptic from "@/components/Haptics";
+import PreviewSVG from "@/components/sketch/PreviewSVG";
 import { Text, useThemeColor } from "@/components/Themed";
+import { Alert } from "@/utils/Alert";
+import { client } from "@/utils/aws";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { getCurrentUser } from "aws-amplify/auth";
 import { useRouter } from "expo-router";
 import { MotiView } from "moti";
-import React, { useState } from "react";
-import {
-  Dimensions,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-} from "react-native";
-
-const { width } = Dimensions.get("window");
+import { useState } from "react";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 export default function PreviewMyWriting() {
   const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
-
+  const preview = useAppSelector((s) => s.newPost.preview);
   const tint = useThemeColor({ light: "#8B4513", dark: "#D2B48C" }, "tint");
   const textColor = useThemeColor(
     { light: "#1a1a1a", dark: "#f1f1f1" },
@@ -28,14 +26,56 @@ export default function PreviewMyWriting() {
     { light: "#F5F2E9", dark: "#252525" },
     "background",
   );
+  const [sending, setSending] = useState(false);
 
-  const handleFinalPost = () => {
-    Haptic.success();
-    // Logic to mint on Solana or post to AWS Amplify Gen 2
-    console.log("Post Minted/Created");
-    router.push("/success");
+  const handleFinalPost = async () => {
+    if (sending) return;
+    else if (!preview) {
+      Alert("No such letter to send", "Letter content is empty", [
+        { text: "Ok" },
+        {
+          text: "Write New Letter",
+          onPress: () => router.navigate({ pathname: "/write" }),
+        },
+      ]);
+      return;
+    }
+
+    try {
+      setSending(true);
+
+      const user = await getCurrentUser();
+      const { data, errors } = await client.models.Post.create({
+        userID: user.userId,
+        points: preview?.strokeItems,
+        color: preview?.color,
+        size: preview?.size,
+      });
+
+      if (errors) {
+        console.log("graph ql err", errors);
+        throw "err sending letter";
+      }
+
+      console.log("Post Minted/Created", data?.id);
+      Haptic.success();
+      if (router.canDismiss()) router.dismissTo({ pathname: "/my-account" });
+      else router.navigate({ pathname: "/my-account" });
+    } catch (e) {
+      console.log("failed to send");
+      Haptic.err();
+    } finally {
+      setSending(false);
+    }
   };
 
+  if (!preview)
+    return (
+      <Empty
+        label="No letter to preview"
+        icon={<MaterialCommunityIcons name="note-remove-outline" />}
+      />
+    );
   return (
     <View style={[styles.container, { backgroundColor: secondaryBg }]}>
       {/* Header Info */}
@@ -60,6 +100,13 @@ export default function PreviewMyWriting() {
         </View>
 
         <View style={styles.drawingArea}>
+          <PreviewSVG
+            strokeItems={preview.strokeItems}
+            stroke={preview.color}
+            strokeWidth={preview.size}
+            loopDelayMS={3000}
+            isLooping
+          />
           {/* 
               This is where your <SkiaView> or SVG Path animation component lives.
               For now, a placeholder for the "Playback" 
@@ -120,18 +167,16 @@ export default function PreviewMyWriting() {
           </View>
         </View>
 
-        <Pressable
+        <Button
           onPress={handleFinalPost}
-          style={({ pressed }) => [
-            styles.postButton,
-            { backgroundColor: textColor, opacity: pressed ? 0.8 : 1 },
-          ]}
-        >
-          <MotiView animate={{ scale: 1 }} transition={{ type: "spring" }}>
-            <Text style={styles.postButtonText}>Seal & Send</Text>
-          </MotiView>
-          <Feather name="send" size={18} color={secondaryBg} />
-        </Pressable>
+          onPressIn={Haptic.select}
+          active
+          arrow
+          title="Seal & Send"
+          icon={(p) => (
+            <Feather name="send" size={p.size} color={secondaryBg} />
+          )}
+        />
 
         <Pressable onPress={() => router.back()} style={styles.editBtn}>
           <Text style={[styles.editBtnText, { color: textColor }]}>

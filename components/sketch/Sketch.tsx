@@ -1,10 +1,10 @@
 import { Path, SketchCanvas } from "@sourcetoad/react-native-sketch-canvas";
-import React, {
-    forwardRef,
-    useCallback,
-    useImperativeHandle,
-    useRef,
-    useState,
+import {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useRef,
+  useState,
 } from "react";
 import { StyleSheet } from "react-native";
 import { Point, StrokeItem } from "./toSVGpaths";
@@ -41,7 +41,14 @@ const Sketch = forwardRef<SketchRef, SketchProps>(
       },
       getStrokeItems: () => strokes,
       getStrokes: () => strokes.map((item) => item.points),
-      setDiatricsMode: (enabled: boolean) => setDiatricsMode(enabled),
+
+      undo: () => {
+        canvasRef.current?.undo();
+        setStrokes((prev) => {
+          const next = prev.slice(0, -1);
+          return next;
+        });
+      },
     }));
 
     const setStartTime = useCallback(() => {

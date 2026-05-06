@@ -4,7 +4,7 @@ export const DEFAULT_CANVAS = {
   height: 400,
   width: 400,
 };
-export const ArabicLetters: Record<1 | 2 | 3, StrokeItem[]> = {
+export const SVG_DATA: Record<1 | 2 | 3, StrokeItem[]> = {
   1: [
     {
       startTime: 8.924792006611824,

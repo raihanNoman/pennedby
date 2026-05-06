@@ -1,17 +1,18 @@
 import Haptic from "@/components/Haptics";
 import { Text, useThemeColor } from "@/components/Themed";
+import { MODES } from "@/constants/Presets";
 import { Feather } from "@expo/vector-icons";
+import { useTheme } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { MotiView } from "moti";
-import React from "react";
 import {
-    Dimensions,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    View,
+  Dimensions,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
 } from "react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -20,33 +21,9 @@ const CARD_WIDTH = Platform.OS === "web" ? 400 : SCREEN_WIDTH - 48;
 const GAP = 16;
 const INTERVAL = CARD_WIDTH + GAP;
 
-const MODES = [
-  {
-    id: "romantic",
-    title: "Romantic",
-    subtitle: "Soft ink, flowing strokes, and poetic playback.",
-    colors: ["#FF9A9E", "#FAD0C4"],
-    icon: "heart",
-  },
-  {
-    id: "business",
-    title: "Business",
-    subtitle: "Structured memos, fast playback, and official seals.",
-    colors: ["#F5F7FA", "#B8C6DB"], // Light yellow/silver vibe
-    darkColors: ["#2C3E50", "#000000"],
-    icon: "briefcase",
-  },
-  {
-    id: "philosophy",
-    title: "Philosophy",
-    subtitle: "Deep ink, slow build, and permanent record.",
-    colors: ["#4FACFE", "#00F2FE"],
-    icon: "anchor",
-  },
-];
-
 export default function NewWriting() {
   const router = useRouter();
+  const isDark = useTheme().dark;
   const textColor = useThemeColor(
     { light: "#1a1a1a", dark: "#f1f1f1" },
     "text",
@@ -63,6 +40,8 @@ export default function NewWriting() {
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
+      <Stack.Screen options={{ headerShadowVisible: false, title: "" }} />
+
       <View style={styles.header}>
         <Text style={[styles.label, { color: textColor, opacity: 0.5 }]}>
           STEP 1: SELECT INTENT
@@ -94,48 +73,44 @@ export default function NewWriting() {
               style={styles.pressable}
             >
               <LinearGradient
-                colors={
-                  ["#FFF9E5", "#F5E6AD"]
-                  //    light: ["#FFF9E5", "#F5E6AD"],
-                  //                   dark: ["#232323", "#111"],
-                }
-                style={styles.gradient}
+                colors={isDark ? mode.colors : mode.colors}
+                style={[StyleSheet.absoluteFill, styles.gradient]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.cardHeader}>
-                  <Feather
-                    name={mode.icon as any}
-                    size={28}
-                    color={mode.id === "business" ? "#8B4513" : "white"}
-                  />
-                  <View style={styles.activeIndicator} />
-                </View>
+              />
 
-                <View>
-                  <Text
-                    style={[
-                      styles.cardTitle,
-                      { color: mode.id === "business" ? "#4A3728" : "white" },
-                    ]}
-                  >
-                    {mode.title}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.cardSubtitle,
-                      {
-                        color:
-                          mode.id === "business"
-                            ? "#6D5D50"
-                            : "rgba(255,255,255,0.8)",
-                      },
-                    ]}
-                  >
-                    {mode.subtitle}
-                  </Text>
-                </View>
-              </LinearGradient>
+              <View style={styles.cardHeader}>
+                <Feather
+                  name={mode.icon as any}
+                  size={28}
+                  color={mode.id === "business" ? "#8B4513" : "white"}
+                />
+                <View style={styles.activeIndicator} />
+              </View>
+
+              <View>
+                <Text
+                  style={[
+                    styles.cardTitle,
+                    { color: mode.id === "business" ? "#4A3728" : "white" },
+                  ]}
+                >
+                  {mode.title}
+                </Text>
+                <Text
+                  style={[
+                    styles.cardSubtitle,
+                    {
+                      color:
+                        mode.id === "business"
+                          ? "#6D5D50"
+                          : "rgba(255,255,255,0.8)",
+                    },
+                  ]}
+                >
+                  {mode.subtitle}
+                </Text>
+              </View>
             </Pressable>
           </MotiView>
         ))}
