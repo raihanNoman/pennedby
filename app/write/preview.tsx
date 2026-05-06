@@ -46,16 +46,20 @@ export default function PreviewMyWriting() {
 
       const user = await getCurrentUser();
       const { data, errors } = await client.models.Post.create({
+        points: preview.strokeItems,
+        viewBox: preview.viewBox,
+        color: preview.color,
+        size: preview.size,
+
         userID: user.userId,
-        points: preview?.strokeItems,
-        color: preview?.color,
-        size: preview?.size,
       });
 
       if (errors) {
         console.log("graph ql err", errors);
         throw "err sending letter";
       }
+
+      // give them a link
 
       console.log("Post Minted/Created", data?.id);
       Haptic.success();

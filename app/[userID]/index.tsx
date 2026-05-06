@@ -1,169 +1,80 @@
-import { Feather } from "@expo/vector-icons";
+import { LoadingScreen } from "@/components/Empty";
+import PostItem, { useColors } from "@/components/post/item";
+import { isWeb, SCREEN } from "@/constants/Platform";
+import { client } from "@/utils/aws";
+import { Post, User } from "@/utils/aws/types";
 import { useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useEffect, useState } from "react";
+import { Platform, StyleSheet, Text, View } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // Mocking "ThemedColor" hook behavior
-const useThemedColors = () => ({
-  background: "#F9F7F2", // Light Parchment
-  darkBackground: "#121212", // Deep Slate
-  text: "#2C2C2C",
-  accent: "#8B4513", // Ink Brown
-  card: "#FFFFFF",
-  border: "#E0DCCF",
-});
 
-const { width, height } = Dimensions.get("window");
-
-// --- Types ---
-type Post = {
-  id: string;
-  title: string;
-  previewPoints: string;
-  audioDuration?: string;
-  createdAt: string;
-};
-
-// --- Dummy Data ---
-const DUMMY_POSTS: Post[] = [
-  {
-    id: "1",
-    title: "A Note to Mr.Beast",
-    previewPoints: "...",
-    audioDuration: "0:45",
-    createdAt: "2h ago",
-  },
-  {
-    id: "2",
-    title: "Midnight Thoughts",
-    previewPoints: "...",
-    audioDuration: "1:12",
-    createdAt: "1d ago",
-  },
-  {
-    id: "3",
-    title: "Collab Proposal",
-    previewPoints: "...",
-    audioDuration: "0:30",
-    createdAt: "3d ago",
-  },
-];
-
-export default function UserProfile() {
-  const params = useLocalSearchParams() as { userID: string };
+function useUserPosts() {
+  const parms = useLocalSearchParams() as { userID?: string };
+  const [user, setUser] = useState<User>();
+  const [posts, setPost] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [posts, setPosts] = useState<Post[]>(DUMMY_POSTS);
-  const colors = useThemedColors();
-
-  // Logic for dark/light (In real app, use useColorScheme)
-  const isDark = false;
-  const themeBg = isDark ? colors.darkBackground : colors.background;
-  const themeText = isDark ? "#E0E0E0" : colors.text;
 
   useEffect(() => {
-    // Simulating API call logic
-    setTimeout(() => setLoading(false), 1000);
+    (async () => {
+      try {
+        if (!parms.userID) throw "no user ID";
+
+        const { data, errors } = await client.models.User.get({
+          id: parms.userID,
+        });
+
+        if (!data || errors) {
+          console.log("graph ql err", errors);
+          throw "err getting post";
+        }
+
+        setUser(user);
+        const posts = await user?.posts();
+
+        if (posts?.data) {
+          setPost(posts.data);
+        } else if (posts?.errors) {
+          console.log("err getting posts", posts.errors);
+        }
+      } catch (e) {
+        console.log("err getting post", e);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const renderPost = ({ item }: { item: Post }) => (
-    <View
-      style={[
-        styles.pageContainer,
-        { height: height * 0.8, backgroundColor: themeBg },
-      ]}
-    >
-      <View
-        style={[
-          styles.letterCard,
-          {
-            backgroundColor: isDark ? "#1E1E1E" : "#FFF",
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        {/* Letter Header */}
-        <View style={styles.letterHeader}>
-          <View>
-            <Text style={[styles.pennedLabel, { color: colors.accent }]}>
-              Penned by
-            </Text>
-            <Text style={[styles.userName, { color: themeText }]}>Jay</Text>
-          </View>
-          <View style={styles.metaInfo}>
-            <Text style={styles.dateText}>{item.createdAt}</Text>
-            {item.audioDuration && (
-              <View style={styles.audioBadge}>
-                <Feather name="mic" size={12} color={colors.accent} />
-                <Text style={styles.audioText}>{item.audioDuration}</Text>
-              </View>
-            )}
-          </View>
-        </View>
+  return { posts, user, loading };
+}
+export default function UserProfile() {
+  const { posts, user, loading } = useUserPosts();
+  const { themeBg, themeText, accent } = useColors();
 
-        {/* The "Handwriting" Canvas Area */}
-        <View style={styles.canvasPreview}>
-          <View style={styles.placeholderInk}>
-            {/* This is where your SVG / Canvas component would animate */}
-            <Text
-              style={[styles.italicText, { color: isDark ? "#555" : "#CCC" }]}
-            >
-              [Handwritten Content Preview...]
-            </Text>
-          </View>
-        </View>
+  // Logic for dark/light (In real app, use useColorScheme)
 
-        {/* Title & Interaction */}
-        <View style={styles.letterFooter}>
-          <Text style={[styles.letterTitle, { color: themeText }]}>
-            {item.title}
-          </Text>
-          <Pressable
-            style={[styles.playButton, { backgroundColor: colors.accent }]}
-          >
-            <Feather name="play" size={20} color="#FFF" />
-            <Text style={styles.playButtonText}>Watch Ink</Text>
-          </Pressable>
-        </View>
-      </View>
-    </View>
-  );
-
-  if (loading) {
-    return (
-      <View style={[styles.centered, { backgroundColor: themeBg }]}>
-        <ActivityIndicator color={colors.accent} size="large" />
-      </View>
-    );
-  }
+  if (loading) return <LoadingScreen loading label="Getting letters" />;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeBg }]}>
-      <View style={styles.profileHeader}>
-        <Text style={[styles.brandTitle, { color: themeText }]}>
-          PennedBy<Text style={{ color: colors.accent }}>.me</Text>
-        </Text>
-      </View>
-
-      <FlatList
-        data={posts}
-        renderItem={renderPost}
-        keyExtractor={(item) => item.id}
-        pagingEnabled // Snaps like TikTok/Reels
-        showsVerticalScrollIndicator={false}
-        snapToInterval={height * 0.8}
-        decelerationRate="fast"
+      <ScrollView
+        pagingEnabled
+        decelerationRate={"fast"}
+        snapToInterval={SCREEN.height * 0.8}
         contentContainerStyle={styles.listContent}
-      />
+      >
+        <View style={styles.profileHeader}>
+          <Text style={[styles.brandTitle, { color: themeText }]}>
+            PennedBy<Text style={{ color: accent }}>.me</Text>
+          </Text>
+        </View>
+
+        {posts?.map((item) => (
+          <PostItem post={item} key={item.id} />
+        ))}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -187,10 +98,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   listContent: {
-    paddingHorizontal: Platform.OS === "web" ? width * 0.2 : 0, // Wide margins on web for iPad look
+    paddingHorizontal: isWeb ? SCREEN.width * 0.2 : 0, // Wide margins on web for iPad look
   },
   pageContainer: {
-    width: width,
+    width: SCREEN.width,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,

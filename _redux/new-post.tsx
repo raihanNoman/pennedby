@@ -1,7 +1,7 @@
 import { StrokeItem } from "@/components/sketch/type";
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
-type Preview = {
+export type Preview = {
   viewBox: string;
   strokeItems: StrokeItem[];
   color: string;

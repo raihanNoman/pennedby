@@ -3,12 +3,13 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 const schema = a.schema({
   Post: a
     .model({
+      title: a.string(),
       isPublic: a.boolean().default(true),
-      points: a.json(), // svg points used to do the animation
+      points: a.json().required(), // svg points used to do the animation
 
       color: a.string(),
       size: a.integer(),
-      viewBox: a.string(),
+      viewBox: a.string().required(),
 
       audioKey: a.string(), // adding voice
       audioDuration: a.float(), // Vital for the iframe to know the "scroll/play" length

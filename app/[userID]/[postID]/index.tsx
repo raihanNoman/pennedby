@@ -1,46 +1,82 @@
+import { Preview } from "@/_redux/new-post";
+import Empty, { LoadingScreen } from "@/components/Empty";
+import { isStrokeItems } from "@/components/sketch/guard";
+import PreviewSVG from "@/components/sketch/PreviewSVG";
 import { useThemeColor } from "@/components/Themed";
+import { client } from "@/utils/aws";
+import { Post } from "@/utils/aws/types";
 import { Feather } from "@expo/vector-icons";
+import { getCurrentUser } from "aws-amplify/auth";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MotiView } from "moti";
-import React, { useState } from "react";
-import {
-  Dimensions,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useEffect, useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width } = Dimensions.get("window");
+function usePost() {
+  const parms = useLocalSearchParams() as { postID?: string };
+  const [post, setPost] = useState<Post>();
+  const [loaindg, setLoaindg] = useState(true);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!parms.postID) throw "no post ID";
+        const user = await getCurrentUser();
+        const { data, errors } = await client.models.Post.get({
+          id: parms.postID,
+        });
+
+        if (!data || errors) {
+          console.log("graph ql err", errors);
+          throw "err getting post";
+        }
+
+        setPost(data);
+      } catch (e) {
+        console.log("err getting post", e);
+      } finally {
+        setLoaindg(false);
+      }
+    })();
+  }, []);
+
+  return { post, loaindg };
+}
+
+function usePreview(post: Post | undefined) {
+  const [preview, setPreview] = useState<Preview>();
+  const defaultColor = useThemeColor({}, "text");
+  useEffect(() => {
+    if (!post) return;
+
+    try {
+      if (!isStrokeItems(post.points)) throw "invalid stroke items";
+      setPreview({
+        strokeItems: post.points,
+        viewBox: post.viewBox,
+        size: post.size || 3,
+        color: post.color || defaultColor,
+      });
+    } catch (e) {
+      console.log("invalid data recieved", e);
+    }
+  }, [post]);
+
+  return preview;
+}
 export default function PostItemPage() {
-  const { postID } = useLocalSearchParams() as { postID: string };
   const router = useRouter();
-
-  // Theme Colors
-  const textColor = useThemeColor(
-    { light: "#1a1a1a", dark: "#f1f1f1" },
-    "text",
-  );
-  const bgColor = useThemeColor(
-    { light: "#FDFCF8", dark: "#0f0f0f" },
-    "background",
-  );
-  const tintColor = useThemeColor(
-    { light: "#8B4513", dark: "#D2B48C" },
-    "tint",
-  );
-  const borderColor = useThemeColor(
-    { light: "#E5E0D0", dark: "#333" },
-    "border",
-  );
-  const cardBg = useThemeColor({ light: "#FFFFFF", dark: "#1A1A1A" }, "card");
+  const { post, loaindg } = usePost();
+  const preview = usePreview(post);
+  const { cardBg, textColor, tintColor, bgColor, borderColor } = useColors();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1); // The receiver controls speed
 
+  if (loaindg) return <LoadingScreen loading label="Getting post" />;
+  else if (!post) return <Empty label={`No such post`} />;
+  else if (!preview) return <Empty label={`Invalid letter data`} />;
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
       {/* Top Navigation */}
@@ -93,6 +129,14 @@ export default function PostItemPage() {
                 This is where your SVG / Reanimated logic goes. 
                 You would map `speed` to your stroke animation duration.
              */}
+            <PreviewSVG
+              strokeItems={preview.strokeItems}
+              stroke={preview.color}
+              strokeWidth={preview.size}
+              loopDelayMS={3000}
+              isLooping
+            />
+
             {!isPlaying && (
               <MotiView
                 from={{ opacity: 0 }}
@@ -172,7 +216,27 @@ export default function PostItemPage() {
     </SafeAreaView>
   );
 }
-
+function useColors() {
+  // Theme Colors
+  const textColor = useThemeColor(
+    { light: "#1a1a1a", dark: "#f1f1f1" },
+    "text",
+  );
+  const bgColor = useThemeColor(
+    { light: "#FDFCF8", dark: "#0f0f0f" },
+    "background",
+  );
+  const tintColor = useThemeColor(
+    { light: "#8B4513", dark: "#D2B48C" },
+    "tint",
+  );
+  const borderColor = useThemeColor(
+    { light: "#E5E0D0", dark: "#333" },
+    "border",
+  );
+  const cardBg = useThemeColor({ light: "#FFFFFF", dark: "#1A1A1A" }, "card");
+  return { cardBg, textColor, tintColor, bgColor, borderColor };
+}
 const styles = StyleSheet.create({
   container: {
     flex: 1,
