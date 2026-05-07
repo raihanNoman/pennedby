@@ -1,12 +1,11 @@
 import { env } from "$amplify/env/create-gif";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { S3Client } from "@aws-sdk/client-s3";
+// @ts-ignore
 import chromium from "@sparticuz/chromium";
 import { execSync } from "child_process";
 import fs from "fs";
 import puppeteer, { Browser } from "puppeteer-core";
-import { PuppeteerScreenRecorder } from "puppeteer-screen-recorder";
 import type { Schema } from "../../data/resource";
-import { client } from "./aws";
 
 const s3 = new S3Client({ region: env.AWS_REGION });
 
@@ -22,16 +21,24 @@ export const handler: Schema["createGif"]["functionHandler"] = async (event) => 
     let browser: Browser | null = null;
 
     try {
-        const post = await client.models.Post.update({ id: postID });
-        if (!post.data || post.errors) {
-            console.log("graph ql err");
-            console.log(post.errors);
-            throw "no such post " + postID;
+        const executablePath = await chromium
+            .executablePath
+            //  process.env.AWS_EXECUTION_ENV ? "/var/task/node_modules/@sparticuz/chromium/bin" : undefined,
+            // "/opt/chromium",
+            //    "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar",
+            ();
+
+        if (!fs.existsSync(executablePath)) {
+            console.log("Chromium binary not found at path, extracting...");
+        } else {
+            console.log("🟢 got chromumm binary");
         }
 
+        console.log({ iframeUrl });
+
         browser = await puppeteer.launch({
-            args: puppeteer.defaultArgs({ args: chromium.args, headless: "shell" }),
-            executablePath: await chromium.executablePath(),
+            args: [...chromium.args, "--hide-scrollbars", "--disable-web-security"],
+            executablePath: executablePath,
             headless: "shell",
             defaultViewport: {
                 deviceScaleFactor: 1,
@@ -41,25 +48,18 @@ export const handler: Schema["createGif"]["functionHandler"] = async (event) => 
                 height: 1080,
                 width: 1920,
             },
+            issuesEnabled: false,
         });
 
         const page = await browser.newPage();
-        const recorder = new PuppeteerScreenRecorder(page, {
-            followNewTab: true,
-            fps: 30,
-            videoCrf: 18,
-            videoCodec: "libx264",
-            videoPreset: "ultrafast",
-            videoBitrate: 1000,
-            aspectRatio: "4:3",
-            videoFrame: { width: 1024, height: 768 },
-        });
+        await page.goto(iframeUrl, { waitUntil: "networkidle0", timeout: 30000 });
 
         await page.setViewport({ width: 600, height: 600 });
+        const recorder = await page.screencast({ path: `/tmp/${timestamp}.gif` });
+
         console.log("Navigating to:", iframeUrl);
 
-        await page.goto(iframeUrl, { waitUntil: "networkidle2", timeout: 30000 });
-        await recorder.start(mp4); // supports extension - mp4, avi, webm and mov
+        //    await recorder.start(mp4); // supports extension - mp4, avi, webm and mov
         console.log("Recording started ...");
 
         // 4. Wait for the animation to finish
@@ -80,29 +80,38 @@ export const handler: Schema["createGif"]["functionHandler"] = async (event) => 
         console.log("📤 Uploading to S3...");
         const key = `gif/${userID}/${title}.gif`;
 
-        await s3.send(
-            new PutObjectCommand({
-                Bucket: process.env.AMPLIFY_STORAGE_BUCKET_NAME,
-                Key: key,
-                Body: fs.readFileSync(gif),
-                ContentType: "image/gif",
-            }),
-        );
+        return "all done for now";
 
-        console.log("✅ uploaded to S3...");
+        // const post = await client.models.Post.update({ id: postID });
+        // if (!post.data || post.errors) {
+        //     console.log("graph ql err");
+        //     console.log(post.errors);
+        //     throw "no such post " + postID;
+        // }
 
-        const updatedPost = await client.models.Post.update({
-            id: postID,
-            gifKey: key,
-        });
+        // await s3.send(
+        //     new PutObjectCommand({
+        //         Bucket: process.env.AMPLIFY_STORAGE_BUCKET_NAME,
+        //         Key: key,
+        //         Body: fs.readFileSync(gif),
+        //         ContentType: "image/gif",
+        //     }),
+        // );
 
-        if (!updatedPost.data || updatedPost.errors) {
-            console.log("graph ql err");
-            console.log(updatedPost.errors);
-            throw "failed to update post object with gif s3key ";
-        }
+        // console.log("✅ uploaded to S3...");
 
-        return updatedPost.data.gifKey;
+        // const updatedPost = await client.models.Post.update({
+        //     id: postID,
+        //     gifKey: key,
+        // });
+
+        // if (!updatedPost.data || updatedPost.errors) {
+        //     console.log("graph ql err");
+        //     console.log(updatedPost.errors);
+        //     throw "failed to update post object with gif s3key ";
+        // }
+
+        // return updatedPost.data.gifKey;
     } catch (err) {
         console.error("🚨 Critical failure:", err);
         throw err; // Trigger Lambda retry if necessary
@@ -114,3 +123,12 @@ export const handler: Schema["createGif"]["functionHandler"] = async (event) => 
         });
     }
 };
+
+/**
+ // Add this at the VERY top before other imports
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
+// If standard import fails, try requiring from the absolute layer path
+const chromium = require('/opt/nodejs/node_modules/@sparticuz/chromium-min');
+ */

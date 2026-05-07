@@ -44,3 +44,4 @@ yarn-error.*
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+.vercel

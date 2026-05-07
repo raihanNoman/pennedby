@@ -45,7 +45,8 @@ export default function SharePage() {
                 });
 
                 if (!s3key || errors) {
-                    console.log("graph ql err", errors);
+                    console.log("graph ql err");
+                    console.log(errors?.[0]);
                     throw "failed to execute createGif lamba";
                 }
 
