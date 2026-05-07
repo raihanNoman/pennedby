@@ -10,7 +10,7 @@
     "exactOptionalPropertyTypes": false,
     "strict": true,
     "maxNodeModuleJsDepth": 0,
-    "resolveJsonModule": false,
+    "resolveJsonModule": true,
     "incremental": true, // Makes subsequent loads much faster
     "module": "esnext",
     "skipLibCheck": true,

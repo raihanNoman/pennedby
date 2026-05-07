@@ -7,23 +7,34 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import { MotiView } from "moti";
 import {
-  Dimensions,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
+  useWindowDimensions
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring
+} from "react-native-reanimated";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-// On web, we want a narrower "phone-like" card, on mobile we use the full screen width minus padding
-const CARD_WIDTH = Platform.OS === "web" ? 400 : SCREEN_WIDTH - 48;
-const GAP = 16;
-const INTERVAL = CARD_WIDTH + GAP;
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function NewWriting() {
   const router = useRouter();
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
   const isDark = useTheme().dark;
+
+  // Adaptive logic for sizing
+  const CARD_WIDTH = Platform.select({
+    web: SCREEN_WIDTH > 800 ? 380 : SCREEN_WIDTH * 0.8,
+    default: SCREEN_WIDTH - 60,
+  });
+  const GAP = 20;
+  const SNAP_INTERVAL = CARD_WIDTH + GAP;
+
   const textColor = useThemeColor(
     { light: "#1a1a1a", dark: "#f1f1f1" },
     "text",
@@ -33,136 +44,193 @@ export default function NewWriting() {
     "background",
   );
 
-  const handleSelect = (modeId: string) => {
-    Haptic.success();
-    router.push({ pathname: "/write", params: { mode: modeId } });
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <Stack.Screen options={{ headerShadowVisible: false, title: "" }} />
+      <Stack.Screen options={{ headerTransparent: true, title: "" }} />
 
-      <View style={styles.header}>
+      <MotiView
+        from={{ opacity: 0, translateX: -20 }}
+        animate={{ opacity: 1, translateX: 0 }}
+        style={styles.header}
+      >
         <Text style={[styles.label, { color: textColor, opacity: 0.5 }]}>
           STEP 1: SELECT INTENT
         </Text>
         <Text style={[styles.title, { color: textColor }]}>
           Choose your canvas.
         </Text>
+      </MotiView>
+
+      <View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={SNAP_INTERVAL}
+          snapToAlignment="start"
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingHorizontal: (SCREEN_WIDTH - CARD_WIDTH) / 2 },
+          ]}
+          scrollEventThrottle={16}
+        >
+          {MODES.map((mode, index) => (
+            <ModeCard
+              key={mode.id}
+              mode={mode}
+              index={index}
+              width={CARD_WIDTH}
+              isDark={isDark}
+              onSelect={() => {
+                Haptic.success();
+                router.push({ pathname: "/write", params: { mode: mode.id } });
+              }}
+            />
+          ))}
+        </ScrollView>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        decelerationRate="fast"
-        snapToInterval={INTERVAL}
-        snapToAlignment="start"
-        contentContainerStyle={styles.scrollContent}
-        scrollEventThrottle={16}
+      <MotiView
+        from={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 600 }}
+        style={styles.footer}
       >
-        {MODES.map((mode, index) => (
-          <MotiView
-            key={mode.id}
-            from={{ opacity: 0, translateY: 20 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: index * 100, type: "spring" }}
-            style={[styles.cardContainer, { width: CARD_WIDTH }]}
-          >
-            <Pressable
-              onPress={() => handleSelect(mode.id)}
-              style={styles.pressable}
-            >
-              <LinearGradient
-                colors={isDark ? mode.colors : mode.colors}
-                style={[StyleSheet.absoluteFill, styles.gradient]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              />
-
-              <View style={styles.cardHeader}>
-                <Feather
-                  name={mode.icon as any}
-                  size={28}
-                  color={mode.id === "business" ? "#8B4513" : "white"}
-                />
-                <View style={styles.activeIndicator} />
-              </View>
-
-              <View>
-                <Text
-                  style={[
-                    styles.cardTitle,
-                    { color: mode.id === "business" ? "#4A3728" : "white" },
-                  ]}
-                >
-                  {mode.title}
-                </Text>
-                <Text
-                  style={[
-                    styles.cardSubtitle,
-                    {
-                      color:
-                        mode.id === "business"
-                          ? "#6D5D50"
-                          : "rgba(255,255,255,0.8)",
-                    },
-                  ]}
-                >
-                  {mode.subtitle}
-                </Text>
-              </View>
-            </Pressable>
-          </MotiView>
-        ))}
-      </ScrollView>
-
-      <View style={styles.footer}>
+        <Feather
+          name="chevron-right"
+          size={16}
+          color={textColor}
+          style={{ opacity: 0.3 }}
+        />
         <Text style={[styles.footerHint, { color: textColor }]}>
           Swipe to explore moods
         </Text>
-      </View>
+      </MotiView>
     </View>
+  );
+}
+
+function ModeCard({ mode, index, width, isDark, onSelect }: any) {
+  const scale = useSharedValue(1);
+
+  // Choose correct color set based on theme
+  const currentColors = isDark ? mode.darkColors : mode.colors;
+
+  // Logic to determine if text should be dark or light based on the mode
+  const isBusinessLight = !isDark && mode.id === "business";
+  const contentColor = isBusinessLight ? "#4A3728" : "#FFFFFF";
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <MotiView
+      from={{ opacity: 0, scale: 0.9, translateY: 20 }}
+      animate={{ opacity: 1, scale: 1, translateY: 0 }}
+      transition={{
+        delay: index * 150,
+        type: "spring",
+        damping: 15,
+      }}
+      style={[styles.cardWrapper, { width }]}
+    >
+      <AnimatedPressable
+        onPressIn={() => (scale.value = withSpring(0.96))}
+        onPressOut={() => (scale.value = withSpring(1))}
+        onPress={onSelect}
+        style={[styles.pressable, animatedStyle]}
+      >
+        <LinearGradient
+          colors={currentColors}
+          style={[StyleSheet.absoluteFill, styles.gradient]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.cardHeader}>
+            <View
+              style={[
+                styles.iconBox,
+                { backgroundColor: "rgba(255,255,255,0.2)" },
+              ]}
+            >
+              <Feather name={mode.icon} size={24} color={contentColor} />
+            </View>
+            <View
+              style={[
+                styles.activeIndicator,
+                { backgroundColor: contentColor },
+              ]}
+            />
+          </View>
+
+          <View>
+            <Text style={[styles.cardTitle, { color: contentColor }]}>
+              {mode.title}
+            </Text>
+            <Text
+              style={[
+                styles.cardSubtitle,
+                { color: contentColor, opacity: 0.8 },
+              ]}
+            >
+              {mode.subtitle}
+            </Text>
+          </View>
+        </LinearGradient>
+      </AnimatedPressable>
+    </MotiView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center" },
   header: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
+    paddingHorizontal: 32,
+    marginBottom: 40,
+    maxWidth: 800,
+    alignSelf: "center",
+    width: "100%",
   },
   label: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "800",
-    letterSpacing: 2,
-    marginBottom: 4,
+    letterSpacing: 1.5,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "700",
-    fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
+    fontSize: 38,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    ...Platform.select({
+      ios: { fontFamily: "Helvetica Neue" },
+      android: { fontFamily: "sans-serif-medium" },
+    }),
   },
   scrollContent: {
-    paddingHorizontal: 24, // Matches header
     alignItems: "center",
-    paddingRight: Platform.OS === "web" ? 100 : 24,
+    paddingVertical: 20,
   },
-  cardContainer: {
-    height: 450,
-    marginRight: GAP,
-    borderRadius: 24,
-    overflow: "hidden",
+  cardWrapper: {
+    height: 480,
+    marginHorizontal: 10,
+    borderRadius: 32,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
       },
-      web: { boxShadow: "0 20px 40px rgba(0,0,0,0.1)" },
+      android: { elevation: 8 },
+      web: { cursor: "pointer", boxShadow: "0 20px 40px rgba(0,0,0,0.12)" },
     }),
   },
-  pressable: { flex: 1 },
+  pressable: {
+    flex: 1,
+    borderRadius: 32,
+    overflow: "hidden",
+  },
   gradient: {
     flex: 1,
     padding: 32,
@@ -171,33 +239,39 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
+  },
+  iconBox: {
+    padding: 12,
+    borderRadius: 16,
   },
   activeIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.5)",
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 14,
   },
   cardTitle: {
-    fontSize: 36,
-    fontWeight: "800",
-    marginBottom: 8,
-    letterSpacing: -1,
+    fontSize: 42,
+    fontWeight: "900",
+    marginBottom: 12,
+    letterSpacing: -1.5,
   },
   cardSubtitle: {
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: "500",
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "600",
   },
   footer: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     marginTop: 40,
+    gap: 8,
   },
   footerHint: {
-    fontSize: 12,
-    fontWeight: "600",
-    opacity: 0.3,
+    fontSize: 13,
+    fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 1,
   },

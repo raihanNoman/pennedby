@@ -5,7 +5,7 @@ import Haptic from "@/components/Haptics";
 import Sketch from "@/components/sketch/Sketch";
 import { SketchRef } from "@/components/sketch/type";
 import { useViewBox } from "@/components/sketch/useSketch";
-import { Card, Icon } from "@/components/Themed";
+import { Card } from "@/components/Themed";
 import { SAFE_SCREEN_WIDTH } from "@/constants/Platform";
 import { getMode } from "@/constants/Presets";
 import { Alert } from "@/utils/Alert";
@@ -86,115 +86,169 @@ export default function NewWriting() {
   };
 
   return (
-    <View>
+    <View style={styles.container}>
       <Stack.Screen options={{ headerShadowVisible: false, title: "" }} />
 
       <LinearGradient
         colors={isDark ? mode.colors : mode?.darkColors}
-        style={[StyleSheet.absoluteFill, styles.gradient]}
+        style={StyleSheet.absoluteFill}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
 
-      <Card
-        onLayout={setViewBox}
-        style={{
-          alignSelf: "center",
-          borderRadius: styles.canvasWrapper.borderRadius,
-        }}
-      >
-        <View style={[styles.canvasWrapper]}>
-          <Sketch
-            ref={sketchRef}
-            strokeColor={color}
-            strokeWidth={strokeWidth}
-            bgColor="transparent"
-          />
+      <View style={styles.mainContent}>
+        <Card onLayout={setViewBox} style={styles.cardContainer}>
+          <View style={styles.canvasWrapper}>
+            <Sketch
+              ref={sketchRef}
+              strokeColor={color}
+              strokeWidth={strokeWidth}
+              bgColor="transparent"
+            />
+          </View>
+        </Card>
+
+        {/* REFINED ACTION TOOLBAR */}
+        <View style={styles.actionBox}>
+          <Pressable
+            onPress={undoStroke}
+            onPressIn={Haptic.warn}
+            style={styles.actionBtn}
+          >
+            <Octicons
+              name="undo"
+              size={size}
+              color={isDark ? "#fff" : "#000"}
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={incrementSize}
+            onPressIn={Haptic.success}
+            style={styles.actionBtn}
+          >
+            <Octicons
+              name="plus"
+              size={size}
+              color={isDark ? "#fff" : "#000"}
+            />
+          </Pressable>
+
+          {/* Color Indicator with Border for visibility */}
+          <Pressable
+            onPress={changeColor}
+            onPressIn={Haptic.select}
+            style={styles.colorBtn}
+          >
+            <View style={[styles.colorPreview, { backgroundColor: color }]} />
+          </Pressable>
+
+          <Pressable
+            onPress={decrementSize}
+            onPressIn={Haptic.mid}
+            style={styles.actionBtn}
+          >
+            <Octicons
+              name="dash"
+              size={size}
+              color={isDark ? "#fff" : "#000"}
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={clearCanvas}
+            onPressIn={Haptic.heavy}
+            style={styles.actionBtn}
+          >
+            <Octicons name="trash" size={size} color="#ff4444" />
+          </Pressable>
         </View>
-      </Card>
-
-      <View style={styles.actionBox}>
-        <Pressable
-          onPress={undoStroke}
-          onPressIn={Haptic.warn}
-          style={styles.actionBtn}
-        >
-          <Icon size={size}>
-            <Octicons name="undo" />
-          </Icon>
-        </Pressable>
-
-        <Pressable
-          onPress={clearCanvas}
-          onPressIn={Haptic.heavy}
-          style={styles.actionBtn}
-        >
-          <Icon size={size}>
-            <Octicons name="x" />
-          </Icon>
-        </Pressable>
-
-        <Pressable
-          onPress={incrementSize}
-          onPressIn={Haptic.success}
-          style={styles.actionBtn}
-        >
-          <Icon size={size}>
-            <Octicons name="plus" />
-          </Icon>
-        </Pressable>
-        <Pressable
-          onPress={decrementSize}
-          onPressIn={Haptic.mid}
-          style={styles.actionBtn}
-        >
-          <Icon size={size}>
-            <Octicons name="dash" />
-          </Icon>
-        </Pressable>
-
-        <Pressable
-          onPress={changeColor}
-          onPressIn={Haptic.select}
-          style={styles.actionBtn}
-        >
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: color }]} />
-        </Pressable>
       </View>
 
-      <Button title="Reset" onPressIn={Haptic.heavy} onPress={clearCanvas} />
-      <Button
-        title="Get"
-        active
-        onPressIn={Haptic.success}
-        onPress={navPreview}
-      />
+      {/* Footer Buttons */}
+      <View style={styles.footer}>
+        <Button
+          title="Preview Letter"
+          active
+          onPressIn={Haptic.success}
+          onPress={navPreview}
+          style={styles.submitBtn}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  canvasWrapper: {
+  container: {
+    flex: 1,
+  },
+  mainContent: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 20,
-    alignSelf: "center",
-    margin: 4,
-
-    width: SAFE_SCREEN_WIDTH - 32,
+    paddingBottom: 40,
+  },
+  cardContainer: {
+    borderRadius: 24,
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+  },
+  canvasWrapper: {
+    width: SAFE_SCREEN_WIDTH - 40,
+    aspectRatio: 1, // Keeps it square and responsive
     overflow: "hidden",
+    borderRadius: 24,
   },
-  gradient: {
-    flex: 1,
-    padding: 32,
+  actionBox: {
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
+    backgroundColor: "rgba(255, 255, 255, 0.15)", // Glass effect
+    backdropFilter: "blur(10px)", // For web support
+    padding: 8,
+    borderRadius: 40,
+    marginTop: 30,
+    width: Math.min(SAFE_SCREEN_WIDTH - 60, 400), // Constraint for Tablets
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
-  actionBox: { justifyContent: "space-evenly" },
   actionBtn: {
-    height: size * 1.5,
-    width: size * 1.5,
-    borderRadius: (size * 1.5) / 2,
+    height: 48,
+    width: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    // Use semi-transparent background for buttons
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+  },
+  colorBtn: {
+    height: 54,
+    width: 54,
+    borderRadius: 27,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
+  },
+  colorPreview: {
+    height: 36,
+    width: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  submitBtn: {
+    width: "100%",
+    maxWidth: 500,
+    alignSelf: "center",
   },
 });

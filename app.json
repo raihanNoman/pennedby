@@ -17,7 +17,9 @@
       "supportsTablet": true,
       "appleTeamId": "759G3V6R99",
       "bundleIdentifier": "com.nomanapps21.pennedbyme",
-      "associatedDomains": ["applinks:app.quran600.com"],
+      "associatedDomains": [
+        "applinks:app.quran600.com"
+      ],
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Used to record Quran recitation for pronunciation feedback and practice.",
         "NSSpeechRecognitionUsageDescription": "Used to convert arabic speech into text for recitation practice and tests.",
@@ -57,6 +59,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bc28b517-a61b-498a-8176-e7bd9b987103"
+      }
     }
   }
 }

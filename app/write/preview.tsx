@@ -8,7 +8,7 @@ import { Alert } from "@/utils/Alert";
 import { client } from "@/utils/aws";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { getCurrentUser } from "aws-amplify/auth";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { MotiView } from "moti";
 import { useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
@@ -44,13 +44,23 @@ export default function PreviewMyWriting() {
     try {
       setSending(true);
 
+      try {
+        await getCurrentUser();
+        console.log("✅ signed in");
+      } catch (e) {
+        console.log("not signed in. redirecting to auth route", e);
+        router.push({ pathname: "/auth" });
+        return;
+      }
+
+      //  print({ pointsTOUpload: preview.strokeItems });
+
       const user = await getCurrentUser();
       const { data, errors } = await client.models.Post.create({
-        points: preview.strokeItems,
+        points: JSON.stringify(preview.strokeItems),
         viewBox: preview.viewBox,
         color: preview.color,
         size: preview.size,
-
         userID: user.userId,
       });
 
@@ -66,7 +76,7 @@ export default function PreviewMyWriting() {
       if (router.canDismiss()) router.dismissTo({ pathname: "/my-account" });
       else router.navigate({ pathname: "/my-account" });
     } catch (e) {
-      console.log("failed to send");
+      console.log("failed to send", e);
       Haptic.err();
     } finally {
       setSending(false);
@@ -82,6 +92,8 @@ export default function PreviewMyWriting() {
     );
   return (
     <View style={[styles.container, { backgroundColor: secondaryBg }]}>
+      <Stack.Screen options={{ headerTransparent: true, title: "" }} />
+
       {/* Header Info */}
       <View style={styles.header}>
         <Text style={[styles.label, { color: tint }]}>FINAL PREVIEW</Text>
@@ -152,42 +164,19 @@ export default function PreviewMyWriting() {
         </View>
       </MotiView>
 
-      {/* Action Area */}
-      <View style={styles.actionSection}>
-        <View style={styles.optionsRow}>
-          <View style={styles.option}>
-            <Text style={[styles.optionLabel, { color: textColor }]}>Mode</Text>
-            <Text style={[styles.optionValue, { color: tint }]}>
-              Philosophy (Permanent)
-            </Text>
-          </View>
-          <View style={styles.option}>
-            <Text style={[styles.optionLabel, { color: textColor }]}>
-              Security
-            </Text>
-            <Text style={[styles.optionValue, { color: tint }]}>
-              Solana Certified
-            </Text>
-          </View>
-        </View>
+      <Button
+        onPress={handleFinalPost}
+        onPressIn={Haptic.select}
+        active
+        arrow
+        title="Seal & Send"
+      />
 
-        <Button
-          onPress={handleFinalPost}
-          onPressIn={Haptic.select}
-          active
-          arrow
-          title="Seal & Send"
-          icon={(p) => (
-            <Feather name="send" size={p.size} color={secondaryBg} />
-          )}
-        />
-
-        <Pressable onPress={() => router.back()} style={styles.editBtn}>
-          <Text style={[styles.editBtnText, { color: textColor }]}>
-            Back to Edit
-          </Text>
-        </Pressable>
-      </View>
+      <Pressable onPress={() => router.back()} style={styles.editBtn}>
+        <Text style={[styles.editBtnText, { color: textColor }]}>
+          Back to Edit
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -215,8 +204,11 @@ const styles = StyleSheet.create({
   },
   previewCanvas: {
     width: "100%",
+    maxHeight: "75%",
     aspectRatio: 0.75, // Like a sheet of paper
     borderRadius: 16,
+    marginBottom: 24,
+    alignSelf: "center",
     padding: 20,
     ...Platform.select({
       ios: {
