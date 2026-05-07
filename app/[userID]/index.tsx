@@ -20,7 +20,7 @@ function useUserPosts() {
     useEffect(() => {
         (async () => {
             try {
-                console.log("fetching data for", parms.userID);
+                console.log("fetching user ...", parms.userID);
                 if (!parms.userID) throw "no user ID";
 
                 const { data, errors } = await client.models.User.get({ id: parms.userID });
@@ -31,10 +31,14 @@ function useUserPosts() {
                 }
 
                 setUser(data);
-                const posts = await user?.posts();
+                console.log("✅ fetched user");
+
+                console.log("fetching posts...");
+                const posts = await data?.posts();
 
                 if (posts?.data) {
                     setPost(posts.data);
+                    console.log("✅ fetched posts", posts.data.length);
                 } else if (posts?.errors) {
                     console.log("❌ err getting posts", posts.errors);
                 }

@@ -2,12 +2,13 @@ import { isIOS, isWeb } from "@/constants/Platform";
 import { Post } from "@/utils/aws/types";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@react-navigation/native";
-import { useEffect, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback } from "react";
 import { Dimensions, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import Haptic from "../Haptics";
 import { Card, useThemeColor } from "../Themed";
 import PreviewSVG from "../sketch/PreviewSVG";
-import { isStrokeItems } from "../sketch/guard";
-import { StrokeItem } from "../sketch/type";
+import { useStrokeItems } from "./useStrokeItems";
 
 const { width, height } = Dimensions.get("window");
 export const useColors = () => {
@@ -26,23 +27,29 @@ export const useColors = () => {
 };
 
 export default function PostItem({ post }: { post: Post }) {
+    const router = useRouter();
+    const params = useLocalSearchParams() as { userID: string };
     const { themeBg, themeText, ...colors } = useColors();
     const isDark = useTheme().dark;
     const date = formatDate(new Date(post.createdAt));
 
-    const [strokeItems, setStrokeItems] = useState<StrokeItem[]>([]);
-
-    useEffect(() => {
-        if (!post) return;
-
-        try {
-            let points = JSON.parse(post.points.toString());
-            if (!isStrokeItems(points)) throw "invalid stroke items";
-            setStrokeItems(points);
-        } catch (e) {
-            console.log("❌ invalid data recieved", e);
-        }
-    }, [post]);
+    const strokeItems = useStrokeItems(post);
+    const navShare = useCallback(
+        () =>
+            router.push({
+                pathname: "/[userID]/[postID]/share",
+                params: { userID: params.userID, postID: post.id },
+            }),
+        [],
+    );
+    const navPost = useCallback(
+        () =>
+            router.push({
+                pathname: "/[userID]/[postID]",
+                params: { userID: params.userID, postID: post.id },
+            }),
+        [],
+    );
 
     return (
         <View style={[styles.pageContainer, { height: height * 0.8, backgroundColor: themeBg }]}>
@@ -51,7 +58,7 @@ export default function PostItem({ post }: { post: Post }) {
                 <View style={styles.letterHeader}>
                     <View>
                         <Text style={[styles.pennedLabel, { color: colors.accent }]}>Penned by</Text>
-                        <Text style={[styles.userName, { color: themeText }]}>Jay</Text>
+                        <Text style={[styles.userName, { color: themeText }]}>{post.title || "Title"}</Text>
                     </View>
                     <View style={styles.metaInfo}>
                         <Text style={styles.dateText}>{date}</Text>
@@ -88,9 +95,14 @@ export default function PostItem({ post }: { post: Post }) {
                 {/* Title & Interaction */}
                 <View style={styles.letterFooter}>
                     <Text style={[styles.letterTitle, { color: themeText }]}>{post.title}</Text>
-                    <Pressable style={[styles.playButton, { backgroundColor: colors.accent }]}>
+                    <Pressable
+                        onPressIn={Haptic.select}
+                        onPress={navShare}
+                        onLongPress={navPost}
+                        style={[styles.playButton, { backgroundColor: colors.accent }]}
+                    >
                         <Feather name="play" size={20} color="#FFF" />
-                        <Text style={styles.playButtonText}>Watch Ink</Text>
+                        <Text style={styles.playButtonText}>Share Letter</Text>
                     </Pressable>
                 </View>
             </Card>

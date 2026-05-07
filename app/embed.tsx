@@ -22,23 +22,20 @@ customHeaders:
  */
 
 const handleCopyEmbed = async () => {
-  const src = "http://localhost:8081/embed";
-  const embedCode = `<iframe src="${src}" width="100%" style="aspect-ratio: 1/1; border: none;" loading="lazy"></iframe>`;
+    const src = "http://localhost:8081/embed";
+    const embedCode = `<iframe src="${src}" width="100%" style="aspect-ratio: 1/1; border: none;" loading="lazy"></iframe>`;
 
-  await Clipboard.setStringAsync(embedCode);
-  Haptic.success();
-  alert("Embed code copied to clipboard!");
+    await Clipboard.setStringAsync(embedCode);
+    Haptic.success();
+    alert("Embed code copied to clipboard!");
 };
 
 export default function EmbedView() {
-  return (
-    <Pressable
-      onPress={handleCopyEmbed}
-      style={{ flex: 1, backgroundColor: "gray" }}
-    >
-      <PreviewSVG strokeItems={SVG_DATA[2]} loopDelayMS={800} isLooping />
-    </Pressable>
-  );
+    return (
+        <Pressable onPress={handleCopyEmbed} style={{ flex: 1, backgroundColor: "gray" }}>
+            <PreviewSVG strokeItems={SVG_DATA[2]} loopDelayMS={800} isLooping />
+        </Pressable>
+    );
 }
 
 const styles = StyleSheet.create({});
