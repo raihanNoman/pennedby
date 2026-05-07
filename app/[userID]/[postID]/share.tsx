@@ -1,5 +1,6 @@
 import Haptic from "@/components/Haptics";
 import { blurhash } from "@/constants/image-blur-hash";
+import { BASE_URL } from "@/constants/url";
 import { client } from "@/utils/aws";
 import { getCurrentUser } from "aws-amplify/auth";
 import { getUrl } from "aws-amplify/storage";
@@ -9,14 +10,12 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-const base = "http://localhost:8081";
-
 export default function SharePage() {
     const params = useLocalSearchParams() as { postID?: string; userID?: string };
     const penname = params.userID;
     const title = params.postID;
 
-    const link = `${base}/${penname}/${title}`;
+    const link = `${BASE_URL}/${penname}/${title}`;
 
     const [gifLink, setGifLink] = useState<string>();
     const [loadingGif, setloadingGif] = useState(true);

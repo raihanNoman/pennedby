@@ -1,6 +1,7 @@
 import Haptic from "@/components/Haptics";
 import { SVG_DATA } from "@/components/sketch/data";
 import PreviewSVG from "@/components/sketch/PreviewSVG";
+import { BASE_URL } from "@/constants/url";
 import * as Clipboard from "expo-clipboard";
 import { Pressable, StyleSheet } from "react-native";
 
@@ -22,7 +23,7 @@ customHeaders:
  */
 
 const handleCopyEmbed = async () => {
-    const src = "http://localhost:8081/embed";
+    const src = `${BASE_URL}/embed`;
     const embedCode = `<iframe src="${src}" width="100%" style="aspect-ratio: 1/1; border: none;" loading="lazy"></iframe>`;
 
     await Clipboard.setStringAsync(embedCode);
