@@ -1,6 +1,18 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { createGif } from "../functions/create-gif/recource";
 
 const schema = a.schema({
+  createGif: a
+    .mutation()
+    .arguments({
+      iframeUrl: a.string().required(),
+      userID: a.string().required(),
+      title: a.string().required(),
+    })
+    .returns(a.string()) // returns the s3 key
+    .authorization((allow) => allow.authenticated())
+    .handler(a.handler.function(createGif)),
+
   Post: a
     .model({
       title: a.string(),
