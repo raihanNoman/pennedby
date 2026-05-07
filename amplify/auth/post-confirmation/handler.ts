@@ -5,8 +5,7 @@ import { generateClient } from "aws-amplify/data";
 import type { PostConfirmationTriggerHandler } from "aws-lambda";
 import { type Schema } from "../../data/resource";
 
-const { resourceConfig, libraryOptions } =
-  await getAmplifyDataClientConfig(env);
+const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env);
 Amplify.configure(resourceConfig, libraryOptions);
 const client = generateClient<Schema>();
 
@@ -16,29 +15,29 @@ const client = generateClient<Schema>();
  */
 
 export const handler: PostConfirmationTriggerHandler = async (event) => {
-  try {
-    const { userAttributes } = event.request;
-    console.log("🟢 cognito sub", userAttributes.sub);
+    try {
+        const { userAttributes } = event.request;
+        console.log("🟢 cognito sub", userAttributes.sub);
 
-    const name =
-      userAttributes.preferred_username ||
-      userAttributes.name ||
-      userAttributes.email?.split("@")[0] ||
-      "New User";
+        const name =
+            userAttributes.preferred_username ||
+            userAttributes.name ||
+            userAttributes.email?.split("@")[0] ||
+            "New User";
 
-    const { data, errors } = await client.models.User.create({
-      id: userAttributes.sub,
-      name,
-    });
+        const { data, errors } = await client.models.User.create({
+            id: userAttributes.sub,
+            name,
+        });
 
-    if (errors) {
-      console.log("graphql err", data);
-      throw "could not create user on post confirmation";
+        if (errors) {
+            console.log("🚩 graphql err", data);
+            throw "could not create user on post confirmation";
+        }
+        console.log("✅✅ post-confirmation", data?.id);
+    } catch (e) {
+        console.log("❌ post-confirmation function", e);
     }
-    console.log("✅✅ post-confirmation", data?.id);
-  } catch (e) {
-    console.log("❌ post-confirmation function", e);
-  }
 
-  return event;
+    return event;
 };
