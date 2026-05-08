@@ -1,7 +1,6 @@
 {
   "type": "module",
   "dependencies": {
-    "@sparticuz/chromium-min": "^148.0.0",
     "puppeteer-core": "^24.43.0"
   }
 }

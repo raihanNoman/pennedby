@@ -10,7 +10,10 @@ export const createGif = defineFunction({
     ephemeralStorageSizeMB: 512,
     layers: {
         "@aws-lambda-ffmpeg-lambda-layer": "arn:aws:lambda:us-east-1:599797655192:layer:ffmpeg:1",
-        "@sparticuz/chromium": "arn:aws:lambda:us-east-1:599797655192:layer:chromium:1",
+        "@sparticuz/chromium": "arn:aws:lambda:us-east-1:599797655192:layer:chromium-x86:1",
     },
-    architecture: "arm64",
+    architecture: "x86_64",
+    // environment: {
+    //     BUCKET_NAME: "pennedByMe",
+    // },
 });

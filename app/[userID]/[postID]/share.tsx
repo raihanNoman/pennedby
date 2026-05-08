@@ -1,9 +1,11 @@
+import Button from "@/components/Button";
 import Haptic from "@/components/Haptics";
 import { blurhash } from "@/constants/image-blur-hash";
 import { BASE_URL } from "@/constants/url";
 import { client } from "@/utils/aws";
+import "@aws-amplify/ui-react/styles.css";
 import { getCurrentUser } from "aws-amplify/auth";
-import { getUrl } from "aws-amplify/storage";
+import { downloadData, getUrl } from "aws-amplify/storage";
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams } from "expo-router";
@@ -77,6 +79,42 @@ export default function SharePage() {
         alert("Embed code copied to clipboard!"); // make this toast
     };
 
+    const downloadToComputer = async () => {
+        if (!gifLink) return;
+
+        try {
+            // 1. Fetch the data
+            const { result } = downloadData({
+                path: `gif/${penname}/${title}.gif`, // Use the key/path to the file
+            });
+
+            const { body } = await result;
+
+            // 2. Convert to Blob
+            // On Web, body.blob() is available
+            const blob = await body.blob();
+
+            // 3. Create a download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${title || "animation"}.gif`; // The filename on the computer
+
+            // 4. Trigger the download
+            document.body.appendChild(a);
+            a.click();
+
+            // 5. Cleanup
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            Haptic.success();
+        } catch (err) {
+            console.error("Download failed:", err);
+        }
+    };
+
+    console.log(gifLink);
     return (
         <View>
             <Stack.Screen options={{ title: title || "Letter by Anonymous" }} />
@@ -92,17 +130,18 @@ export default function SharePage() {
 
             <TouchableOpacity onPress={copyGifLink}>
                 <Text>Share As Email</Text>
-
                 <Image
                     style={styles.image}
-                    source="https://picsum.photos/seed/696/3000/2000"
-                    placeholder={{ blurhash }}
+                    source={{ uri: gifLink }}
+                    placeholder={{ blurhash: blurhash }}
                     contentFit="cover"
                     transition={1000}
                 />
-
+                {/* <StorageImage alt="sleepy-cat" path={`public/${gifLink}`} /> */}
                 <Text>Press to copy iframe</Text>
             </TouchableOpacity>
+
+            <Button onPress={downloadToComputer} />
         </View>
     );
 }
@@ -110,7 +149,8 @@ export default function SharePage() {
 const styles = StyleSheet.create({
     image: {
         flex: 1,
-        width: "100%",
+        width: 400,
         backgroundColor: "#0553",
+        height: 400,
     },
 });

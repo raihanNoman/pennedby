@@ -1,23 +1,23 @@
 {
-  "extends": "expo/tsconfig.base",
-  "compilerOptions": {
-    "target": "ESNext",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "ignoreDeprecations": "6.0", // Special flag for the 2026 release,
-    "strictFunctionTypes": false,
-    "noUncheckedIndexedAccess": false,
-    "exactOptionalPropertyTypes": false,
-    "strict": true,
-    "maxNodeModuleJsDepth": 0,
-    "resolveJsonModule": true,
-    "incremental": true, // Makes subsequent loads much faster
-    "module": "esnext",
-    "skipLibCheck": true,
-    "disableSizeLimit": true,
-    "paths": {
-      "@/*": ["./*"]
-    }
-  },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+    "extends": "expo/tsconfig.base",
+    "compilerOptions": {
+        "target": "ESNext",
+        "moduleResolution": "bundler",
+        "jsx": "react-jsx",
+        "ignoreDeprecations": "6.0", // Special flag for the 2026 release,
+        "strictFunctionTypes": false,
+        "noUncheckedIndexedAccess": false,
+        "exactOptionalPropertyTypes": false,
+        "strict": true,
+        "maxNodeModuleJsDepth": 0,
+        "resolveJsonModule": true,
+        "incremental": true, // Makes subsequent loads much faster
+        "module": "esnext",
+        "skipLibCheck": true,
+        "disableSizeLimit": true,
+        "paths": {
+            "@/*": ["./*"]
+        }
+    },
+    "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }

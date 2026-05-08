@@ -2,7 +2,7 @@ import { defineStorage } from "@aws-amplify/backend";
 import { createGif } from "../functions/create-gif/recource";
 
 export const storage = defineStorage({
-    name: "quranPlay",
+    name: "pennedByMe",
     isDefault: true,
     access: (allow) => ({
         "gif/{entity_id}/*": [

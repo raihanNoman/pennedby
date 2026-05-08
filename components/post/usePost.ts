@@ -11,7 +11,10 @@ export function usePost(postID: string) {
             try {
                 if (!postID) throw "no post ID";
                 console.log("fetching post ... ", postID);
-                const { data, errors } = await client.models.Post.get({ id: postID });
+                const { data, errors } = await client.models.Post.get(
+                    { id: postID }, //
+                    { authMode: "identityPool" },
+                );
 
                 if (!data || errors) {
                     console.log("🚩 graph ql err", errors);

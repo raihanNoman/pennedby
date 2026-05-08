@@ -19,6 +19,7 @@ const schema = a
         Post: a
             .model({
                 title: a.string(),
+                slug: a.string().required(),
                 isPublic: a.boolean().default(true),
                 points: a.json().required(), // svg points used to do the animation
 
@@ -33,14 +34,20 @@ const schema = a
 
                 gifKey: a.string(),
 
+                penname: a.string().required(),
                 userID: a.id().required(),
                 user: a.belongsTo("User", "userID"),
             })
+            .secondaryIndexes((index) => [
+                // This allows you to query by penname AND titleSlug together
+                index("penname").sortKeys(["slug"]).queryField("getLetter"),
+            ])
             .authorization((allow) => [allow.guest(), allow.authenticated(), allow.ownerDefinedIn("userID")]),
 
         User: a
             .model({
                 name: a.string(),
+                penname: a.string(), // slug
                 picture: a.string(), // Show the founder's face in the letter corner
                 posts: a.hasMany("Post", "userID"),
             })
@@ -57,5 +64,8 @@ export const data = defineData({
     schema,
     authorizationModes: {
         defaultAuthorizationMode: "userPool",
+        apiKeyAuthorizationMode: {
+            expiresInDays: 30,
+        },
     },
 });
